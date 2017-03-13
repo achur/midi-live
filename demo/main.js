@@ -1,0 +1,3 @@
+window.onload = () => {
+  MIDILive.init();
+};
