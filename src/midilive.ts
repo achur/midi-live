@@ -1,6 +1,7 @@
 ///<reference path="./midi.d.ts" />
 
 import Instrument from "./instruments/instrument";
+import Instruments from "./instruments";
 
 /**
  * Entry point for midilive.js. Used to list controllers and attach them to
@@ -13,6 +14,11 @@ class MIDILive {
   private inputInstruments: Object = {};
 
   init() : Promise<any> {
+    this.midi = null;
+    this.inputs = [];
+    this.globalInstruments = [];
+    this.inputInstruments = {};
+
     return new Promise((resolve, reject) => {
       navigator.requestMIDIAccess().then(
         (m) => {
@@ -64,5 +70,8 @@ class MIDILive {
   }
 }
 
+const instance = new MIDILive();
+instance['Instruments'] = Instruments;
+
 // Attach to the window for exporting.
-window['MIDILive'] = new MIDILive();
+window['MIDILive'] = instance;

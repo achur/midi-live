@@ -1,3 +1,7 @@
 window.onload = () => {
-  MIDILive.init();
+  const debugInstrument = new MIDILive.Instruments.DebugInstrument();
+
+  MIDILive.init().then(() => {
+    MIDILive.addInstrument(debugInstrument);
+  });
 };

@@ -1,10 +1,13 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const debug_instrument_1 = require("./instruments/debug-instrument");
+const Instruments = {
+    DebugInstrument: debug_instrument_1.default,
+};
+exports.default = Instruments;
 
-},{}],2:[function(require,module,exports){
-
-},{}],3:[function(require,module,exports){
+},{"./instruments/debug-instrument":2}],2:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
@@ -22,13 +25,17 @@ class DebugInstrument {
     }
 }
 ;
+exports.default = DebugInstrument;
+
+},{}],3:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 
 },{}],4:[function(require,module,exports){
-arguments[4][1][0].apply(exports,arguments)
-},{"dup":1}],5:[function(require,module,exports){
 ///<reference path="./midi.d.ts" />
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const instruments_1 = require("./instruments");
 /**
  * Entry point for midilive.js. Used to list controllers and attach them to
  * instruments.
@@ -38,6 +45,10 @@ class MIDILive {
         this.inputInstruments = {};
     }
     init() {
+        this.midi = null;
+        this.inputs = [];
+        this.globalInstruments = [];
+        this.inputInstruments = {};
         return new Promise((resolve, reject) => {
             navigator.requestMIDIAccess().then((m) => {
                 this.midi = m;
@@ -85,7 +96,9 @@ class MIDILive {
         console.log(`${id}: ${data}`);
     }
 }
+const instance = new MIDILive();
+instance['Instruments'] = instruments_1.default;
 // Attach to the window for exporting.
-window['MIDILive'] = new MIDILive();
+window['MIDILive'] = instance;
 
-},{}]},{},[1,2,3,4,5]);
+},{"./instruments":1}]},{},[1,2,3,4]);

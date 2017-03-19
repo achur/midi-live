@@ -14,3 +14,5 @@ class DebugInstrument implements Instrument {
     console.log(`off ${note}(${velocity})`);
   }
 };
+
+export default DebugInstrument;
