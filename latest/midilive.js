@@ -2,12 +2,14 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const debug_instrument_1 = require("./instruments/debug-instrument");
+const soundfont_instrument_1 = require("./instruments/soundfont-instrument");
 const Instruments = {
     DebugInstrument: debug_instrument_1.default,
+    SoundfontInstrument: soundfont_instrument_1.default,
 };
 exports.default = Instruments;
 
-},{"./instruments/debug-instrument":2}],2:[function(require,module,exports){
+},{"./instruments/debug-instrument":2,"./instruments/soundfont-instrument":4}],2:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
@@ -32,6 +34,51 @@ exports.default = DebugInstrument;
 Object.defineProperty(exports, "__esModule", { value: true });
 
 },{}],4:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+/**
+ *
+ */
+class Options {
+    constructor() {
+        this.offDelay = 0;
+    }
+}
+/**
+ * Synth instrument based on soundfonts using MIDI.js.
+ *
+ * Note that right now you can only use one at a time due to the design of MIDI.js. Need to update
+ * with static state to support loading multiple instruments.
+ */
+class SoundfontInstrument {
+    constructor(soundfontUrl, instrument, options = new Options()) {
+        this.soundfontUrl = soundfontUrl;
+        this.instrument = instrument;
+        this.options = options;
+    }
+    init() {
+        return new Promise((resolve, reject) => {
+            window.MIDI.loadPlugin({
+                soundfontUrl: this.soundfontUrl,
+                instrument: this.instrument,
+                onsuccess: () => {
+                    window.MIDI.setVolume(0, 127);
+                    resolve();
+                },
+            });
+        });
+    }
+    noteOn(note, velocity) {
+        window.MIDI.noteOn(0, note, velocity, 0);
+    }
+    noteOff(note, velocity) {
+        window.MIDI.noteOff(0, note, velocity, this.options.offDelay);
+    }
+}
+;
+exports.default = SoundfontInstrument;
+
+},{}],5:[function(require,module,exports){
 ///<reference path="./midi.d.ts" />
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -55,7 +102,7 @@ class MIDILive {
                 let inputs = m.inputs.values();
                 let input;
                 while (input = inputs.next().value) {
-                    console.log(input);
+                    this.inputs.push(input);
                     input.onmidimessage =
                         (e) => this.handle(e.target.id, e.data);
                 }
@@ -93,7 +140,29 @@ class MIDILive {
         }
     }
     handle(id, data) {
-        console.log(`${id}: ${data}`);
+        let cmd = data[0] >> 4;
+        let channel = data[0] & 0xf;
+        let note = data[1];
+        let velocity = data[2];
+        if (cmd == 8 || (cmd == 9 && velocity == 0)) {
+            this.noteOff(id, note, velocity);
+        }
+        else if (cmd == 9) {
+            this.noteOn(id, note, velocity);
+        }
+        // TODO(alex): Handle sustain, pitch bend, etc.
+    }
+    noteOn(id, note, velocity) {
+        this.globalInstruments.forEach((instrument) => instrument.noteOn(note, velocity));
+        if (this.inputInstruments[id]) {
+            this.inputInstruments[id].forEach((instrument) => instrument.noteOn(note, velocity));
+        }
+    }
+    noteOff(id, note, velocity) {
+        this.globalInstruments.forEach((instrument) => instrument.noteOff(note, velocity));
+        if (this.inputInstruments[id]) {
+            this.inputInstruments[id].forEach((instrument) => instrument.noteOff(note, velocity));
+        }
     }
 }
 const instance = new MIDILive();
@@ -101,4 +170,4 @@ instance['Instruments'] = instruments_1.default;
 // Attach to the window for exporting.
 window['MIDILive'] = instance;
 
-},{"./instruments":1}]},{},[1,2,3,4]);
+},{"./instruments":1}]},{},[1,2,3,4,5]);

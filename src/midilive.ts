@@ -26,7 +26,7 @@ class MIDILive {
           let inputs : Iterator<MIDIInput> = m.inputs.values();
           let input : MIDIInput;
           while(input = inputs.next().value) {
-            console.log(input);
+            this.inputs.push(input);
             input.onmidimessage =
                 (e: MIDIMessageEvent) => this.handle(e.target.id, e.data);
           }
@@ -66,7 +66,31 @@ class MIDILive {
   }
 
   private handle(id: string, data: Uint8Array[3]) {
-    console.log(`${id}: ${data}`);
+    let cmd = data[0] >> 4;
+    let channel = data[0] & 0xf;
+    let note = data[1];
+    let velocity = data[2];
+
+    if (cmd == 8 || (cmd == 9 && velocity == 0)) {
+      this.noteOff(id, note, velocity);
+    } else if (cmd == 9) {
+      this.noteOn(id, note, velocity);
+    }
+    // TODO(alex): Handle sustain, pitch bend, etc.
+  }
+
+  private noteOn(id: string, note: number, velocity: number) {
+    this.globalInstruments.forEach((instrument) => instrument.noteOn(note, velocity));
+    if (this.inputInstruments[id]) {
+      this.inputInstruments[id].forEach((instrument) => instrument.noteOn(note, velocity));
+    }
+  }
+
+  private noteOff(id: string, note: number, velocity: number) {
+    this.globalInstruments.forEach((instrument) => instrument.noteOff(note, velocity));
+    if (this.inputInstruments[id]) {
+      this.inputInstruments[id].forEach((instrument) => instrument.noteOff(note, velocity));
+    }
   }
 }
 

@@ -1,3 +1,5 @@
+// Browser MIDI spec
+
 interface MIDIInput {
   id: string;
   name: string;
@@ -21,4 +23,9 @@ interface MIDIAccess {
 
 interface Navigator {
   requestMIDIAccess: () => Promise<any>;
+}
+
+// Libraries
+interface Window {
+  MIDI: any;
 }
